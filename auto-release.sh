@@ -71,7 +71,7 @@ function createNewRelease(){
       "${p}${RELESASE_URL}${p}" \
        -d "'${params}'" )
 
-  x=$(eval "/bin/curl --no-progress-meter $xD")
+  x=$(eval "curl --no-progress-meter $xD")
   vers=${vers//'X'/''}
   echo $x
   echo $vers
