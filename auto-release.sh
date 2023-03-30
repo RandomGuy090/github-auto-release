@@ -82,7 +82,7 @@ function uploadBinary(){
   vers=$1
   name=$2
 
-  x=$(curl "https://api.github.com/repos/${USER}/${REPO}/releases/latest")
+  x=$(curl --no-progress-meter "https://api.github.com/repos/${USER}/${REPO}/releases/latest")
   x=$(echo $x | grep  '"id') 
   
   IFS=' ' read -r -a a <<< $x
