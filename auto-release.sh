@@ -143,6 +143,7 @@ fi
 
 newVer=$(addVersion $version )
 # exec="run.exe"
+echo $newVer
 createNewRelease $newVer 
 if [[ $EXE ]]; then
   uploadBinary $newVer $EXE
