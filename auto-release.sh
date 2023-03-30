@@ -3,17 +3,20 @@ AUTODESCRIPTION=0
 
 function print_usage() {
   echo "auto release on github. Script gets last version and increments it. After it creates new release"
-  echo "  -r  github release url"
-  echo "    e.g. https://api.github.com/repos/{USER}/{REPO}/releases"
+  echo "  -r  github repo name"
+  echo "  -u  github user name"
+  echo "  -e  binary file name"
   echo "  -t  github token"
   echo "  -p  set as prerelease"
   echo "  -a  autogenerate description for release"
 }
 
-while getopts 'r:t:pa' flag; do
+while getopts 'r:u:t:pae:' flag; do
   case "${flag}" in
-    r) RELESASE_URL="${OPTARG}" ;;
+    r) REPO="${OPTARG}" ;;
+    u) USER="${OPTARG}" ;;
     t) TOKEN="${OPTARG}" ;;
+    e) EXE="${OPTARG}" ;;
     p) PRERELASE=1 ;;
     a) AUTODESCRIPTION=1 ;;
     *) print_usage
@@ -47,7 +50,7 @@ function fetchGithubReleases(){
   -H "Accept: application/vnd.github+json" \
   -H "Authorization: Bearer $TOKEN"\
   -H "X-GitHub-Api-Version: 2022-11-28" \
-    "$RELESASE_URL")
+    "https://api.github.com/repos/${USER}/${REPO}/releases" )
   echo $res
 }
 
@@ -63,18 +66,40 @@ function createNewRelease(){
   x=${x//'$vers'/"$vers"}
   x=${x//'X'/'"'}
   params="{$x}"
-  echo "'${params}'"
+  # echo "'${params}'"
   p='"'
   xD=$(echo -H '"Accept: application/vnd.github+json"' -H \
     "${p}Authorization: Bearer ${TOKEN}$p"  \
      -H '"X-GitHub-Api-Version: 2022-11-28"'\
-      "${p}${RELESASE_URL}${p}" \
+      "${p}https://api.github.com/repos/${USER}/${REPO}/releases${p}" \
        -d "'${params}'" )
 
   x=$(eval "curl --no-progress-meter $xD")
   vers=${vers//'X'/''}
-  echo $x
-  echo $vers
+}
+
+function uploadBinary(){
+  vers=$1
+  name=$2
+
+  x=$(curl "https://api.github.com/repos/${USER}/${REPO}/releases/latest")
+  x=$(echo $x | grep  '"id') 
+  
+  IFS=' ' read -r -a a <<< $x
+  
+  x=${x:7:8}
+  # x=${x:24:8}
+  p='"'
+  xD=$(echo -H '"Accept: application/vnd.github+json"' -H \
+    "${p}Authorization: Bearer ${TOKEN}$p"  \
+     -H '"X-GitHub-Api-Version: 2022-11-28"'\
+     -H '"Content-Type: application/multipart"' \
+      "${p}https://uploads.github.com/repos/${USER}/${REPO}/releases/${x}/assets?name=$EXE${p}" \
+       "--data-binary ${p}@$EXE${p}" )
+  
+  x=$(eval "curl -L  -X POST --no-progress-meter $xD")
+  vers=${vers//'X'/''}
+
 }
 
 res=$(fetchGithubReleases)
@@ -117,8 +142,12 @@ fi
 
 
 newVer=$(addVersion $version )
-
-createNewRelease $newVer
+# exec="run.exe"
+createNewRelease $newVer 
+if [[ $EXE ]]; then
+  uploadBinary $newVer $EXE
+  
+fi
 
 exit 0
 
