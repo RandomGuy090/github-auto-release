@@ -1,6 +1,7 @@
 PRERELASE=0
 AUTODESCRIPTION=0
 BRANCH="master"
+
 function print_usage() {
   echo "auto release on github. Script gets last version and increments it. After it creates new release"
   echo "  -r  github repo name"
@@ -78,9 +79,7 @@ function createNewRelease(){
 
   x=$(eval "curl --no-progress-meter $xD")
   vers=${vers//'X'/''}
-  echo $xD
-  echo ""
-  echo $x
+
 }
 
 function uploadBinary(){
